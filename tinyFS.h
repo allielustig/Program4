@@ -1,3 +1,5 @@
+#ifndef TINYFSH
+#define TINYFSH
 
 #define BLOCKSIZE 256
 #define DEFAULT_DISK_SIZE 10240
@@ -38,3 +40,5 @@ int tfs_readByte(fileDescriptor FD, char *buffer);
 
 /* change the file pointer location to offset (absolute). Returns success/error codes.*/
 int tfs_seek(fileDescriptor FD, int offset);
+
+#endif
