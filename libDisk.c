@@ -29,7 +29,7 @@ int readBlock(int disk, int bNum, void *block){
 
 	seek_error = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
 
-	if (seek_error > 1){
+	if (seek_error > 0){
 		
 		read_error = read(disk, block, BLOCKSIZE);
 		if (read_error > 1){
