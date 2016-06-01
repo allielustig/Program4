@@ -8,20 +8,22 @@
 #include <errno.h>
 
 int main(){
-	int binfile = openDisk("numbers", 0);
+	//int binfile = openDisk("numbers", 0);
+	int binfile = openDisk("newfile", 50);
 	printf("numbers fd: %d\n", binfile);
 
 	char *block = malloc(257);
-	int status = readBlock(binfile, 0, block);
+	//int status = readBlock(binfile, 0, block);
+	readBlock(binfile, 0, block);
 	block[256] = '\0';
 
-	int index;
+	//int index;
 	//for (index = 0; index < 256; index++){
 	//	printf("%x ", *(block + index));
 	//}
 	printf("%s\n", block);
 
-	writeBlock(binfile, 1, block);
+	//writeBlock(binfile, 1, block);*/
 	closeDisk(binfile);
 	
 
@@ -32,7 +34,11 @@ int openDisk(char *filename, int nBytes){
 	int diskNum = -1;
 
 	if (nBytes > 0){
+		char * buf = calloc(nBytes, 1);
 		diskNum = open(filename, O_RDWR | O_CREAT);
+
+		write(diskNum, buf, nBytes);
+		free(buf);
 	}
 
 	else if (nBytes == 0){
@@ -46,7 +52,8 @@ int openDisk(char *filename, int nBytes){
 int readBlock(int disk, int bNum, void *block){
 	int seek_error = -1;
 	int read_error = -1;
-
+	int fileSize = lseek(disk, 0, SEEK_END);
+	printf("fileSize is: %d\n", fileSize);
 	seek_error = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
 
 	if (seek_error >= 0){
@@ -66,6 +73,9 @@ int readBlock(int disk, int bNum, void *block){
 int writeBlock(int disk, int bNum, void *block){
 	//more error checking needed here?
 	//worry about nBytes size?...
+
+	int fileSize = lseek(disk, 0, SEEK_END);
+	printf("fileSize is: %d\n", fileSize);
 
 	int seekRetVal = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
 	int writeRetVal = -1;
