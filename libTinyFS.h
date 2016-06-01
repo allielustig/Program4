@@ -4,7 +4,12 @@
 #define BLOCKSIZE 256
 #define DEFAULT_DISK_SIZE 10240
 #define DEFAULT_DISK_NAME "tinyFSDisk"
+#define MAX_FILE_SYSTEMS 100
+
 typedef int fileDescriptor;
+
+/* initilizes  mountTable[MAX_FILE_SYSTEMS] and fileSizeTable[MAX_FILE_SYSTEMS] to all 0's.*/
+void init_mount_size_tables();
 
 /* Makes a blank TinyFS file system of size nBytes on the file specified by ‘filename’. This function should use the 
 emulated disk library to open the specified file, and upon success, format the file to be mountable. This includes 
