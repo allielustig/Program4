@@ -23,7 +23,23 @@ int openDisk(char *filename, int nBytes){
 
 
 int readBlock(int disk, int bNum, void *block){
+	int seek_error = -1;
+	int read_error = -1;
 
+	seek_error = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
+
+	if (seek_error > 1){
+		
+		read_error = read(disk, block, BLOCKSIZE);
+		if (read_error > 1){
+			return 0;
+		}
+		else {
+			return read_error;
+		}
+
+	}
+	return seek_error;
 }
 
 int writeBlock(int disk, int bNum, void *block){
