@@ -26,6 +26,28 @@ int readBlock(int disk, int bNum, void *block){
 
 }
 
+int writeBlock(int disk, int bNum, void *block){
+	//more error checking needed here?
+	//worry about nBytes size?...
+
+	int seekRetVal = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
+	int writeRetVal = -1;
+	if (seekRetVal == EBADF) {
+		return -1;
+		//-1 means the file is not open
+	}
+	else if (seekRetVal == EOVERFLOW) {
+		return -2;
+		//-2 means the index is out of bounds?
+	}
+	else {
+		//lseek was successful. Write buffer
+		writeRetVal = write(disk, block, BLOCKSIZE);
+		return writeRetVal;
+		//return 0 on success. Still need to define all errors
+	}
+}
+
 
 void closeDisk(int disk){
 	close(disk);
