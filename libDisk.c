@@ -5,7 +5,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 
+int main(){
+	int binfile = openDisk("binfile.bin", 0);
+	printf("binfile fd: %d\n", binfile);
+
+	char *block = malloc(256);
+	int status = readBlock(binfile, 0, block);
+
+	int index;
+	for (index = 0; index < 256; index++){
+		printf("%d ", *(block + index));
+	}
+
+	return 0;
+}
 
 int openDisk(char *filename, int nBytes){
 	int diskNum = -1;
