@@ -6,16 +6,16 @@ CFLAGS = -g -Wall -Werror
 
 all: tinyFsDemo
 
-tinyFsDemo: libDisk tinyFS tinyFSDemo.c
-	$(CC) $(CFLAGS) -o tinyFsDemo libDisk.c tinyFS.c tinyFSDemo.c
+tinyFsDemo: libTinyFS tinyFsDemo.c
+	$(CC) $(CFLAGS) -o tinyFsDemo libDisk.o libTinyFS.o tinyFsDemo.c
 
 
-tinyFs: libDisk tinyFS.c tinyFS.h tinyFs.o
-	$(CC) $(CFLAGS) -c libDisk.c tinyFS.c
+libTinyFS: libDisk libTinyFS.c libTinyFS.h libTinyFS.o
+	$(CC) $(CFLAGS) -c libTinyFS.c libDisk.c
 
 
 libDisk: libDisk.c libDisk.h libDisk.o
 	$(CC) $(CFLAGS) -c libDisk.c
 
 clean:
-	rm -f tinyFsDemo libDisk tinyFS
+	rm -f tinyFsDemo libDisk.o libTinyFS.o
