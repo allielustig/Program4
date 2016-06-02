@@ -14,26 +14,6 @@ int currentMounted = 0;
 int diskSize = 0;
 int open_files_table[256];
 
-int main(){
-	char * buffer = malloc(2*BLOCKSIZE);
-	char * buf2 = malloc(1);
-	int i;
-	for (i=0; i<2*BLOCKSIZE; i++){
-		buffer[i] = i;
-	}
-
-	tfs_mkfs("bintest.bin", 2048);
-	tfs_mount("bintest.bin");
-	fileDescriptor tempFD = tfs_openFile("testFile");
-	tfs_writeFile(tempFD, buffer, 2*BLOCKSIZE);
-	tfs_seek(tempFD, 50);
-	tfs_readByte(tempFD, buf2);
-	printf("BUF 2 IS: %c\n", *buf2);
-	tfs_closeFile(tempFD);
-	tfs_unmount();
-
-	return 0;
-}
 /*only call if nBytes > 0*/
 int tfs_mkfs(char *filename, int nBytes){
 	int i=0;
@@ -363,11 +343,9 @@ int searchINodesByFD(fileDescriptor FD){
 
 //returns 0 if not found, else return fd
 int searchINodesByName(char *name) {
-	printf("FILENAME: %s\n", name);
 	struct iNode *root = malloc(BLOCKSIZE);
 	struct iNode *file = malloc(BLOCKSIZE);
 
-	printf("currentMounted: %d\n", currentMounted);
 	readBlock(currentMounted, ROOTINODE_OFFSET, root);
 	int i;
 	for (i = 0; i < 241; i++) {

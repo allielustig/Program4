@@ -8,29 +8,6 @@
 #include <errno.h>
 #include "TinyFS_errno.h"
 
-/*int main(){
-	//int binfile = openDisk("numbers", 0);
-	int binfile = openDisk("newfile", 50);
-	printf("numbers fd: %d\n", binfile);
-
-	char *block = malloc(257);
-	//int status = readBlock(binfile, 0, block);
-	readBlock(binfile, 0, block);
-	block[256] = '\0';
-
-	//int index;
-	//for (index = 0; index < 256; index++){
-	//	printf("%x ", *(block + index));
-	//}
-	printf("%s\n", block);
-
-	//writeBlock(binfile, 1, block);
-	closeDisk(binfile);
-	
-
-	return 0;
-}*/
-
 int openDisk(char *filename, int nBytes){
 	int diskNum;
 
