@@ -16,15 +16,19 @@ int open_files_table[256];
 
 int main(){
 	char * buffer = malloc(2*BLOCKSIZE);
+	char * buf2 = malloc(1);
 	int i;
 	for (i=0; i<2*BLOCKSIZE; i++){
-		buffer[i] = '*';
+		buffer[i] = i;
 	}
 
 	tfs_mkfs("bintest.bin", 2048);
 	tfs_mount("bintest.bin");
 	fileDescriptor tempFD = tfs_openFile("testFile");
 	tfs_writeFile(tempFD, buffer, 2*BLOCKSIZE);
+	tfs_seek(tempFD, 50);
+	tfs_readByte(tempFD, buf2);
+	printf("BUF 2 IS: %c\n", *buf2);
 	tfs_closeFile(tempFD);
 	tfs_unmount();
 
@@ -179,7 +183,10 @@ int tfs_writeFile(fileDescriptor FD, char *buffer, int size){
 	file->magicNumber = MAGIC_NUMBER;
 	file->fileByteSize = size;
 
-	struct fileExt *dataBlock = malloc(BLOCKSIZE);
+	struct fileExt *dataBlock = calloc(BLOCKSIZE,1);
+	dataBlock->blockCode = DATABLOCK_CODE;
+	dataBlock->magicNumber = MAGIC_NUMBER;
+
 	int iNodeArrayIndex = 0;
 	int fb;
 
@@ -189,9 +196,9 @@ int tfs_writeFile(fileDescriptor FD, char *buffer, int size){
 			return -4; //out of data error
 		}
 		//write 254 bytes OR size, whichever is least to free block
-		if (readBlock(currentMounted, fb, dataBlock) < 0) {
+		/*if (readBlock(currentMounted, fb, dataBlock) < 0) {
 			return -3;
-		}
+		}*/
 		memcpy(dataBlock->data, buffer, size < 254 ? size : 254);
 		//write data block to disk
 		if (writeBlock(currentMounted, fb, dataBlock) < 0) {
