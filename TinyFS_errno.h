@@ -11,6 +11,7 @@
 #define MOUNT_ERROR -6
 #define OUT_OF_SPACE -7
 #define FILE_NOT_OPEN -8
+#define FAILURE -9
 
 
 

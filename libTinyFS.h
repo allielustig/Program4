@@ -92,6 +92,10 @@ int returnToFree(int diskOffset);
 
 int checkFSType();
 
+int tfs_readdir();
+
+int tfs_rename(char *oldname, char *newname);
+
 #endif
 
 

@@ -87,7 +87,7 @@ int tfs_mkfs(char *filename, int nBytes){
 
 	closeDisk(diskNum);
 
-	return SUCCESS;
+	return diskNum;
 }
 
 int tfs_mount(char *filename){
@@ -431,6 +431,56 @@ int findOpenFD(){
 	return i;
 }
 
+int tfs_readdir() {
+	//go to root iNode
+	//look through iNode array for !-1 fds
+	//then go to the block at that index (file iNode)
+	//print out filename of the file iNode
+	printf("Flat filesystem. All files:\n");
+	struct iNode *root = malloc(BLOCKSIZE);
+	struct iNode *file = malloc(BLOCKSIZE);
 
+	readBlock(currentMounted, ROOTINODE_OFFSET, root);
+	int i;
+	for (i = 0; i < 241; i++) {
+		if(root->dataBlockMap[i] != -1){
+			//need to read in that file iNode, check its name
+			if (readBlock(currentMounted, i, file) < 0) {
+				return READ_ERROR;
+			}
+			//check name
+			printf("%s ", file->fileName);
+		}
+	}
+	printf("\n");
+	free(root);
+	free(file);
+	return SUCCESS;
+}
+
+int tfs_rename(char *oldname, char *newname){
+	struct iNode *root = malloc(BLOCKSIZE);
+	struct iNode *file = malloc(BLOCKSIZE);
+
+	readBlock(currentMounted, ROOTINODE_OFFSET, root);
+	int i;
+	for (i = 0; i < 241; i++) {
+		if(root->dataBlockMap[i] != -1){
+			//need to read in that file iNode, check its name
+			if (readBlock(currentMounted, i, file) < 0) {
+				return READ_ERROR;
+			}
+			//check name
+			if (!strcmp(file->fileName, oldname)) {
+				strcpy(file->fileName, newname);
+				writeBlock(currentMounted, i, file);
+			}
+		}
+	}
+	printf("\n");
+	free(root);
+	free(file);
+	return SUCCESS;
+}
 
 
