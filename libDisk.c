@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int main(){
+/*int main(){
 	//int binfile = openDisk("numbers", 0);
 	int binfile = openDisk("newfile", 50);
 	printf("numbers fd: %d\n", binfile);
@@ -23,25 +23,27 @@ int main(){
 	//}
 	printf("%s\n", block);
 
-	//writeBlock(binfile, 1, block);*/
+	//writeBlock(binfile, 1, block);
 	closeDisk(binfile);
 	
 
 	return 0;
-}
+}*/
 
 int openDisk(char *filename, int nBytes){
 	int diskNum = -1;
 
 	if (nBytes > 0){
 		char * buf = calloc(nBytes, 1);
-		diskNum = open(filename, O_RDWR | O_CREAT);
+		diskNum = open(filename, O_RDWR | O_CREAT, S_IRUSR|S_IWUSR| S_IROTH| S_IWOTH);
 
 		write(diskNum, buf, nBytes);
 		free(buf);
 	}
 
 	else if (nBytes == 0){
+		printf("in here\n");
+		printf("open disk filename is: %s\n", filename);
 		diskNum = open(filename, O_RDWR);
 	}
 
@@ -71,11 +73,12 @@ int readBlock(int disk, int bNum, void *block){
 }
 
 int writeBlock(int disk, int bNum, void *block){
+	printf("writing to disk: %d, block: %d\n", disk, bNum);
 	//more error checking needed here?
 	//worry about nBytes size?...
 
-	int fileSize = lseek(disk, 0, SEEK_END);
-	printf("fileSize is: %d\n", fileSize);
+	//int fileSize = lseek(disk, 0, SEEK_END);
+	//printf("fileSize is: %d\n", fileSize);
 
 	int seekRetVal = lseek(disk, bNum * BLOCKSIZE, SEEK_SET);
 	int writeRetVal = -1;

@@ -5,11 +5,41 @@
 #define DEFAULT_DISK_SIZE 10240
 #define DEFAULT_DISK_NAME "tinyFSDisk"
 #define MAX_FILE_SYSTEMS 100
+#define MAGIC_NUMBER 0x45
+#define SUPERBLOCK_CODE 1
+#define INODE_CODE 2
+#define DATABLOCK_CODE 3
+#define FREEBLOCK_CODE 4
 
 typedef int fileDescriptor;
 
-/* initilizes  mountTable[MAX_FILE_SYSTEMS] and fileSizeTable[MAX_FILE_SYSTEMS] to all 0's.*/
-void init_mount_size_tables();
+struct __attribute__((__packed__)) superBlock {
+	char blockCode;
+	char magicNumber;
+	char rootInodeOffset;
+	char freeBlockArray[253];
+};
+
+struct __attribute__((__packed__)) iNode{
+	char blockCode;
+	char magicNumber;
+	char fileName[9];
+	int fileByteSize; //fileSize in Bytes
+	char dataBlockMap[241]; //index is a data block. maps to disk offset.
+	//root node: index i = disk block i. dataBlockMap[i]=fileDescriptor of corresponding file iNode -Allie Lustig -Abraham Lincoln -Michael Scott
+};
+
+struct __attribute__((__packed__)) fileExt{
+	char blockCode;
+	char magicNumber;
+	char data[254];
+};
+
+struct __attribute__((__packed__)) freeBlock{
+	char blockCode;
+	char magicNumber;
+	char emptyBytes[254];
+};
 
 /* Makes a blank TinyFS file system of size nBytes on the file specified by ‘filename’. This function should use the 
 emulated disk library to open the specified file, and upon success, format the file to be mountable. This includes 
@@ -46,4 +76,27 @@ int tfs_readByte(fileDescriptor FD, char *buffer);
 /* change the file pointer location to offset (absolute). Returns success/error codes.*/
 int tfs_seek(fileDescriptor FD, int offset);
 
+int findOpenFD();
+
+int getFreeBlock();
+
+int searchINodesByName(char *name);
+
+void updateRootINode();
+
+void createFileINode(int fb, char *name);
+
+
+
 #endif
+
+
+
+
+
+
+
+
+
+
+
