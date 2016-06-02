@@ -86,7 +86,9 @@ void updateRootINode();
 
 void createFileINode(int fb, char *name);
 
+int searchINodesByFD(fileDescriptor FD);
 
+int returnToFree(int diskOffset);
 
 #endif
 

@@ -15,9 +15,16 @@ int diskSize = 0;
 int open_files_table[256];
 
 int main(){
-	tfs_mkfs("bintest.bin", 1024);
+	char * buffer = malloc(2*BLOCKSIZE);
+	int i;
+	for (i=0; i<2*BLOCKSIZE; i++){
+		buffer[i] = '*';
+	}
+
+	tfs_mkfs("bintest.bin", 2048);
 	tfs_mount("bintest.bin");
 	fileDescriptor tempFD = tfs_openFile("testFile");
+	tfs_writeFile(tempFD, buffer, 2*BLOCKSIZE);
 	tfs_closeFile(tempFD);
 	tfs_unmount();
 
@@ -161,6 +168,163 @@ int tfs_closeFile(fileDescriptor FD) {
 	return 0;
 }
 
+int tfs_writeFile(fileDescriptor FD, char *buffer, int size){
+	//
+	int fileINodeLoc = searchINodesByFD(FD);
+	struct iNode *file = malloc(BLOCKSIZE);
+	if (readBlock(currentMounted, fileINodeLoc, file) < 0) {
+		return -3;
+	}
+	file->blockCode = INODE_CODE;
+	file->magicNumber = MAGIC_NUMBER;
+	file->fileByteSize = size;
+
+	struct fileExt *dataBlock = malloc(BLOCKSIZE);
+	int iNodeArrayIndex = 0;
+	int fb;
+
+	while(size > 0){
+		//find free block, remove from freeblocklist
+		if ((fb = getFreeBlock()) < 0) {
+			return -4; //out of data error
+		}
+		//write 254 bytes OR size, whichever is least to free block
+		if (readBlock(currentMounted, fb, dataBlock) < 0) {
+			return -3;
+		}
+		memcpy(dataBlock->data, buffer, size < 254 ? size : 254);
+		//write data block to disk
+		if (writeBlock(currentMounted, fb, dataBlock) < 0) {
+			return -3;
+		}
+		//add free block to file inode array
+		file->dataBlockMap[iNodeArrayIndex] = fb;
+		iNodeArrayIndex++;
+		//decrement by 254. if size <= 0, no more data left, you're chill
+		size -= 254;
+	}
+	//write file inode back to disk
+	if (writeBlock(currentMounted, fileINodeLoc, file) < 0) {
+		return -3;
+	}
+
+	free(file);
+	free(dataBlock);
+	open_files_table[FD] = 0;
+	return 0;
+}
+
+int tfs_deleteFile(fileDescriptor FD){
+	//use FD to find fileINodeLoc (by searching through rootINode)
+	int fileINodeLoc = searchINodesByFD(FD);
+	//for each datablock in fileiNode list:
+	struct iNode *file = malloc(BLOCKSIZE);
+	if (readBlock(currentMounted, fileINodeLoc, file) < 0) {
+		return -9;
+	}
+	int i;
+	for (i = 0; i < 241 && file->dataBlockMap[i] != -1; i++) {
+		returnToFree(file->dataBlockMap[i]);
+	}
+		//read fileInode into buffer
+		//clear data block information (rewrite whole block)
+		//add fileExt block(now freed) back to supernode freelist
+	//rewrite whole fileInode to be free
+	returnToFree(fileINodeLoc);
+
+	//add to freelist
+	//update rootINode table 
+	struct iNode *root = malloc(BLOCKSIZE);
+	if (readBlock(currentMounted, ROOTINODE_OFFSET, root) < 0) {
+		return -3;
+	}
+	root->dataBlockMap[fileINodeLoc] = -1;
+	if (writeBlock(currentMounted, ROOTINODE_OFFSET, root) < 0) {
+		return -3;
+	}
+	//update open_files_table
+	open_files_table[FD] = -1;
+
+	free(file);
+	free(root);
+	return SUCCESS;
+}
+
+int returnToFree(int diskOffset) {
+	struct freeBlock *fb = malloc(BLOCKSIZE);
+	fb->blockCode = FREEBLOCK_CODE;
+	fb->magicNumber = MAGIC_NUMBER;
+	int i;
+	for (i = 0; i < 254; i++) {
+		fb->emptyBytes[i] = -1;
+	}
+	if (writeBlock(currentMounted, diskOffset, fb) < 0) {
+		return -3;
+	}
+
+	struct superBlock *sb = malloc(BLOCKSIZE);
+	if (readBlock(currentMounted, SUPERBLOCK_OFFSET, sb) < 0) {
+		return -3;
+	}
+	sb->freeBlockArray[diskOffset] = 1;
+	if (writeBlock(currentMounted, SUPERBLOCK_OFFSET, sb) < 0) {
+		return -3;
+	}
+	free(fb);
+	free(sb);
+	return SUCCESS;
+}
+
+int tfs_readByte(fileDescriptor FD, char *buffer){
+	int cursor_offset = open_files_table[FD];
+	int iNode_location = searchINodesByFD(FD);
+
+	struct iNode *file = malloc(BLOCKSIZE);
+	if(readBlock(currentMounted, iNode_location, file) < 0){
+		return -3;
+	}
+
+	//get cursor offset byte out of data portion of file
+
+	int desiredBlock = file->dataBlockMap[cursor_offset / 254];
+
+	struct fileExt *datablock = malloc(BLOCKSIZE);
+	if (readBlock(currentMounted, desiredBlock, datablock) < 0){
+		return -3;
+	}
+
+	*buffer = datablock->data[cursor_offset % 254];
+	open_files_table[FD] = cursor_offset + 1;
+
+	free(file);
+	free(datablock);
+	return 0;
+}
+
+int tfs_seek(fileDescriptor FD, int offset){
+	open_files_table[FD] = offset;
+	return 0;
+}
+
+//returns block location on disk
+int searchINodesByFD(fileDescriptor FD){
+	struct iNode *root = malloc(BLOCKSIZE);
+	readBlock(currentMounted, ROOTINODE_OFFSET, root);
+	int i = 0;
+
+	while(root->dataBlockMap[i] != FD && i < 241){
+		i++;
+	}
+	free(root);
+	if(i == 241){
+		return -2;
+	}
+	else{
+		return i;
+	}
+
+
+}
 //returns 0 if not found, else return fd
 int searchINodesByName(char *name) {
 	printf("FILENAME: %s\n", name);
@@ -185,6 +349,7 @@ int searchINodesByName(char *name) {
 	return 0;
 }
 
+//finds free block, removes from freeBlockArray
 int getFreeBlock() {
 	struct superBlock *superBuf = malloc(BLOCKSIZE);
 	readBlock(currentMounted, SUPERBLOCK_OFFSET, superBuf);
