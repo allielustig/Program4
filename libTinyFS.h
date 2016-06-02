@@ -82,13 +82,15 @@ int getFreeBlock();
 
 int searchINodesByName(char *name);
 
-void updateRootINode();
+int updateRootINode();
 
-void createFileINode(int fb, char *name);
+int createFileINode(int fb, char *name);
 
 int searchINodesByFD(fileDescriptor FD);
 
 int returnToFree(int diskOffset);
+
+int checkFSType();
 
 #endif
 
